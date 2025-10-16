@@ -21,7 +21,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import request from '../../request/request'; // Assuming request.js handles API calls
+// 💥 移除这一行：import request from '../../request/request'; 
+import axios from 'axios'; // ✨ 导入 axios
 
 const emails = ref([]);
 const route = useRoute();
@@ -29,16 +30,28 @@ const route = useRoute();
 onMounted(async () => {
 	const secret = route.query.secret;
 	const limit = route.query.limit;
+	
 	if (secret) {
 		try {
-			const res = await request.get(`/public/showemail`, { secret, limit });
-			if (res.code === 200) {
-				emails.value = res.data;
+			// ✨ 使用 axios.get 替代 request.get
+			// 1. 构建 URLSearchParams 来处理查询参数
+			const params = new URLSearchParams({ secret, limit }).toString();
+			const url = `/public/showemail?${params}`;
+
+			const res = await axios.get(url);
+			// axios 默认将响应数据放在 res.data 中
+			// 你的后端返回结构是 { code: 200, data: [...] }
+			
+			if (res.data.code === 200) {
+				// ✨ 更新为 res.data.data
+				emails.value = res.data.data; 
 			} else {
-				console.error('Error fetching emails:', res.message);
+				// ✨ 更新为 res.data.message
+				console.error('Error fetching emails:', res.data.message);
 			}
 		} catch (error) {
-			console.error('API call failed:', error);
+			// axios 的错误处理
+			console.error('API call failed:', error.response?.data || error.message);
 		}
 	} else {
 		console.error('Secret is missing from the URL.');
